@@ -12,106 +12,76 @@
   <main class="card">
     <header class="hero">
       <h1>おはなし横丁</h1>
-      <p class="lead">ゆっくり、やさしく、話しましょう。</p>
+      <p class="lead">あなたのお話、きかせてください。</p>
     </header>
 
-    <section class="use">
-      <details open>
-        <summary>つかいかた</summary>
-        <ol>
-          <li>白いところに話したいことを書きます。</li>
-          <li><strong>話しかける</strong>を押すと、AIがお返事します。</li>
-          <li>「声で聞く」にチェックで読み上げできます。</li>
-        </ol>
-      </details>
+    <section class="voice-select">
+      <label><input type="radio" name="voice" value="misa" checked> みさちゃん（孫娘）</label>
+      <label><input type="radio" name="voice" value="yuu"> ゆうくん（孫息子）</label>
+      <label><input type="radio" name="voice" value="souta"> ソウタさん（息子）</label>
     </section>
 
-    <section class="io">
-      <textarea id="userInput" rows="4" placeholder="例）今日は散歩で風が気持ちよかったです。"></textarea>
-
-      <div class="row">
-        <button id="talkBtn" class="btn primary">話しかける</button>
-
-        <label class="chk">
-          <input type="checkbox" id="speakToggle" />
-          声で聞く
-        </label>
-
-        <button id="micBtn" class="btn mic" title="音声入力（Chrome推奨）">🎤 声で話す</button>
-      </div>
-
-      <div id="result" class="result" aria-live="polite"></div>
+    <section class="talk">
+      <textarea id="userInput" rows="4" placeholder="例）今日は少し疲れました。"></textarea>
+      <button id="talkBtn" class="btn">話しかける</button>
     </section>
 
-    <footer class="foot">
-      <small>© おはなし横丁</small>
-    </footer>
+    <div id="result" class="result" aria-live="polite"></div>
+
+    <footer class="foot"><small>© おはなし横丁</small></footer>
   </main>
 
   <script>
-    // 波紋エフェクト
-    document.addEventListener("click",(e)=>{
-      const b = e.target.closest(".btn");
-      if(!b) return;
-      const r = b.getBoundingClientRect();
-      b.style.setProperty("--x", `${e.clientX - r.left}px`);
-      b.style.setProperty("--y", `${e.clientY - r.top}px`);
-    });
-
     const inputEl = document.getElementById("userInput");
     const resultEl = document.getElementById("result");
     const btn = document.getElementById("talkBtn");
-    const speakToggle = document.getElementById("speakToggle");
-    const micBtn = document.getElementById("micBtn");
 
     btn.addEventListener("click", async () => {
       const text = (inputEl.value || "").trim();
-      if (!text) { flash("一言でも大丈夫ですよ。"); return; }
-      lock(true);
-      resultEl.textContent = "考えています…";
+      const voiceType = document.querySelector('input[name="voice"]:checked').value;
+      if (!text) {
+        resultEl.textContent = "一言でもいいですよ。";
+        return;
+      }
+      btn.disabled = true;
+      resultEl.textContent = "考えています...";
       try {
         const res = await fetch("/talk", {
           method: "POST",
           headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({ user_input: text })
+          body: JSON.stringify({ user_input: text, voice_type: voiceType }),
         });
         const data = await res.json();
         if (data.error) throw new Error(data.error);
         resultEl.textContent = data.reply;
-        if (speakToggle.checked) speakText(data.reply);
+        speakText(data.reply, voiceType);
         inputEl.value = "";
       } catch (e) {
         resultEl.textContent = "エラー：" + e.message;
       } finally {
-        lock(false);
+        btn.disabled = false;
       }
     });
 
-    function lock(v){ btn.disabled=v; micBtn.disabled=v; }
-    function flash(msg){ resultEl.textContent=msg; setTimeout(()=>{resultEl.textContent=""},2000); }
-
-    // 音声入力
-    let recog;
-    if ("webkitSpeechRecognition" in window) {
-      recog = new webkitSpeechRecognition();
-      recog.lang = "ja-JP";
-      recog.onresult = (e) => {
-        inputEl.value = e.results[0][0].transcript;
-        flash("入力しました。");
-      };
-      recog.onerror = () => flash("うまく聞き取れませんでした。");
-    } else {
-      micBtn.style.display="none";
-    }
-    micBtn.addEventListener("click",()=>{ if(recog) recog.start(); });
-
-    // 読み上げ
-    function speakText(t){
-      const u=new SpeechSynthesisUtterance(t);
+    function speakText(text, voiceType){
+      try{ speechSynthesis.cancel(); }catch{}
+      const u = new SpeechSynthesisUtterance(text);
+      const vs = speechSynthesis.getVoices();
+      if(voiceType==="misa"){
+        u.voice = vs.find(v=>v.name.includes("Kyoko")) || vs[0];
+        u.pitch = 1.15; u.rate = 0.95;
+      } else if(voiceType==="yuu"){
+        u.voice = vs.find(v=>v.name.includes("Otoya")) || vs[0];
+        u.pitch = 1.25; u.rate = 1.05;
+      } else if(voiceType==="souta"){
+        u.voice = vs.find(v=>v.name.includes("Ichiro")||v.name.includes("Taro")) || vs[0];
+        u.pitch = 0.85; u.rate = 0.9;
+      }
       u.lang="ja-JP";
-      u.rate=0.95;u.pitch=1.0;
       speechSynthesis.speak(u);
     }
+
+    window.speechSynthesis.onvoiceschanged = () => {};
   </script>
 </body>
 </html>
