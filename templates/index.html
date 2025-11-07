@@ -1,87 +1,80 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>おはなし横丁</title>
-  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <div class="bg"><div class="radial"></div></div>
+  <main class="container">
+    <h1>おはなし横丁</h1>
+    <p class="subtitle">やさしく話せる、あたたかい時間をどうぞ。</p>
 
-  <main class="card">
-    <header class="hero">
-      <h1>おはなし横丁</h1>
-      <p class="lead">あなたのお話、きかせてください。</p>
-    </header>
+    <div class="guide">
+      <ol>
+        <li>思ったことを一言つぶやく。</li>
+        <li>話しかけるボタンを押す。</li>
+        <li>AIがやさしく返してくれます。</li>
+      </ol>
+    </div>
 
-    <section class="voice-select">
-      <label><input type="radio" name="voice" value="misa" checked> みさちゃん（孫娘）</label>
+    <div class="voice-select">
+      <label><input type="radio" name="voice" value="misa"> みさちゃん（孫娘）</label>
       <label><input type="radio" name="voice" value="yuu"> ゆうくん（孫息子）</label>
-      <label><input type="radio" name="voice" value="souta"> ソウタさん（息子）</label>
-    </section>
+      <label><input type="radio" name="voice" value="souta" checked> ソウタさん（息子）</label>
+    </div>
 
-    <section class="talk">
-      <textarea id="userInput" rows="4" placeholder="例）今日は少し疲れました。"></textarea>
-      <button id="talkBtn" class="btn">話しかける</button>
-    </section>
+    <div class="input-box">
+      <textarea id="user_input" placeholder="今日は少し疲れたな…"></textarea>
+      <div class="button-group">
+        <button id="mic_btn" class="btn mic">🎙 音声入力</button>
+        <button id="send_btn" class="btn">話しかける</button>
+      </div>
+    </div>
 
-    <div id="result" class="result" aria-live="polite"></div>
+    <div id="result" class="result"></div>
 
-    <footer class="foot"><small>© おはなし横丁</small></footer>
+    <footer>© おはなし横丁</footer>
   </main>
 
   <script>
-    const inputEl = document.getElementById("userInput");
-    const resultEl = document.getElementById("result");
-    const btn = document.getElementById("talkBtn");
+    const sendBtn = document.getElementById("send_btn");
+    const micBtn = document.getElementById("mic_btn");
+    const input = document.getElementById("user_input");
+    const result = document.getElementById("result");
 
-    btn.addEventListener("click", async () => {
-      const text = (inputEl.value || "").trim();
-      const voiceType = document.querySelector('input[name="voice"]:checked').value;
-      if (!text) {
-        resultEl.textContent = "一言でもいいですよ。";
-        return;
-      }
-      btn.disabled = true;
-      resultEl.textContent = "考えています...";
-      try {
-        const res = await fetch("/talk", {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({ user_input: text, voice_type: voiceType }),
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        resultEl.textContent = data.reply;
-        speakText(data.reply, voiceType);
-        inputEl.value = "";
-      } catch (e) {
-        resultEl.textContent = "エラー：" + e.message;
-      } finally {
-        btn.disabled = false;
-      }
+    // 音声入力
+    micBtn.addEventListener("click", () => {
+      const rec = new webkitSpeechRecognition();
+      rec.lang = "ja-JP";
+      rec.start();
+      rec.onresult = (e) => {
+        input.value = e.results[0][0].transcript;
+      };
     });
 
-    function speakText(text, voiceType){
-      try{ speechSynthesis.cancel(); }catch{}
-      const u = new SpeechSynthesisUtterance(text);
-      const vs = speechSynthesis.getVoices();
-      if(voiceType==="misa"){
-        u.voice = vs.find(v=>v.name.includes("Kyoko")) || vs[0];
-        u.pitch = 1.15; u.rate = 0.95;
-      } else if(voiceType==="yuu"){
-        u.voice = vs.find(v=>v.name.includes("Otoya")) || vs[0];
-        u.pitch = 1.25; u.rate = 1.05;
-      } else if(voiceType==="souta"){
-        u.voice = vs.find(v=>v.name.includes("Ichiro")||v.name.includes("Taro")) || vs[0];
-        u.pitch = 0.85; u.rate = 0.9;
-      }
-      u.lang="ja-JP";
-      speechSynthesis.speak(u);
-    }
+    // AI返答
+    sendBtn.addEventListener("click", async () => {
+      const text = input.value.trim();
+      if (!text) return;
 
-    window.speechSynthesis.onvoiceschanged = () => {};
+      const voiceType = document.querySelector("input[name='voice']:checked").value;
+      result.textContent = "考え中です…";
+
+      const res = await fetch("/talk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_input: text, voice_type: voiceType }),
+      });
+
+      const data = await res.json();
+      if (data.reply) {
+        result.textContent = data.reply;
+      } else {
+        result.textContent = "少し待ってからもう一度試してください。";
+      }
+    });
   </script>
 </body>
 </html>
