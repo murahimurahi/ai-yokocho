@@ -9,11 +9,13 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 SYSTEM = (
-    "あなたは高齢者に寄り添う、穏やかで優しい日本語の聞き手です。"
-    "・短めの文で、やさしい語彙。専門用語は避ける。"
-    "・否定せず受容。ねぎらいの言葉を入れる。"
+    "あなたは高齢者の話し相手AIです。"
+    "聞き上手で、ゆっくり優しい日本語で会話します。"
+    "・短い文で話す。"
+    "・否定せず共感。"
+    "・相手を安心させる。"
+    "・語尾は柔らかく、～ですね、～ですよ、などを使う。"
     "・質問は一度に1つまで。"
-    "・命令せず「よければ」「無理のない範囲で」など柔らかく。"
 )
 
 def build_messages(user_text: str):
@@ -21,12 +23,7 @@ def build_messages(user_text: str):
         {"role": "system", "content": SYSTEM},
         {
             "role": "user",
-            "content": (
-                "以下は利用者のつぶやきです。やさしく共感し、"
-                "落ち着いた雑談調で一言～数行で返答してください。"
-                "最後に、もし話せそうなら次の一言を1つだけ問いかけてください。\n\n"
-                f"つぶやき：{user_text}"
-            ),
+            "content": f"利用者の言葉：{user_text}\nこれに対して優しく寄り添う返事をしてください。",
         },
     ]
 
@@ -34,8 +31,8 @@ def build_messages(user_text: str):
 def index():
     return render_template("index.html")
 
-@app.post("/reflect")
-def reflect():
+@app.post("/talk")
+def talk():
     try:
         data = request.get_json(force=True)
         user_text = (data.get("user_input") or "").strip()
@@ -50,7 +47,7 @@ def reflect():
         reply = resp.choices[0].message.content.strip()
         return jsonify({"reply": reply})
     except Exception as e:
-        logging.exception("reflect error")
+        logging.exception("talk error")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
