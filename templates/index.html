@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AI横丁 — 話し相手AI</title>
+  <title>おはなし横丁</title>
   <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
@@ -11,46 +11,45 @@
 
   <main class="card">
     <header class="hero">
-      <h1>AI横丁</h1>
-      <p class="tag">昭和レトロ × 優しい未来</p>
-      <p class="lead">おかえりなさい。今日もおつかれさまでした。ここは、ゆっくり話を聴く小さな横丁です。</p>
+      <h1>おはなし横丁</h1>
+      <p class="lead">ゆっくり、やさしく、話しましょう。</p>
     </header>
 
     <section class="use">
       <details open>
-        <summary>使い方（かんたん3ステップ）</summary>
+        <summary>つかいかた</summary>
         <ol>
-          <li>白い箱に いまの気持ち を一言でもOK、書きます。</li>
-          <li><strong>Reflect</strong> を押すと、AIがやさしく返事します。</li>
-          <li>「読み上げ」にチェックで、声でも聴けます。音声入力もOK。</li>
+          <li>白いところに話したいことを書きます。</li>
+          <li><strong>話しかける</strong>を押すと、AIがお返事します。</li>
+          <li>「声で聞く」にチェックで読み上げできます。</li>
         </ol>
       </details>
     </section>
 
     <section class="io">
-      <textarea id="userInput" rows="4" placeholder="例）今日は病院でがんばった。少し疲れたな…"></textarea>
+      <textarea id="userInput" rows="4" placeholder="例）今日は散歩で風が気持ちよかったです。"></textarea>
 
       <div class="row">
-        <button id="reflectBtn" class="btn primary">Reflect</button>
+        <button id="talkBtn" class="btn primary">話しかける</button>
 
         <label class="chk">
           <input type="checkbox" id="speakToggle" />
-          読み上げ
+          声で聞く
         </label>
 
-        <button id="micBtn" class="btn mic" title="音声入力（Chrome推奨）">🎤 音声入力</button>
+        <button id="micBtn" class="btn mic" title="音声入力（Chrome推奨）">🎤 声で話す</button>
       </div>
 
       <div id="result" class="result" aria-live="polite"></div>
     </section>
 
     <footer class="foot">
-      <small>© AI横丁 — ゆっくり、やさしく、お話しましょう。</small>
+      <small>© おはなし横丁</small>
     </footer>
   </main>
 
-  <!-- クリック位置に合わせた波紋アニメ -->
   <script>
+    // 波紋エフェクト
     document.addEventListener("click",(e)=>{
       const b = e.target.closest(".btn");
       if(!b) return;
@@ -58,23 +57,20 @@
       b.style.setProperty("--x", `${e.clientX - r.left}px`);
       b.style.setProperty("--y", `${e.clientY - r.top}px`);
     });
-  </script>
 
-  <script>
     const inputEl = document.getElementById("userInput");
     const resultEl = document.getElementById("result");
-    const btn = document.getElementById("reflectBtn");
+    const btn = document.getElementById("talkBtn");
     const speakToggle = document.getElementById("speakToggle");
     const micBtn = document.getElementById("micBtn");
 
-    // 送信
     btn.addEventListener("click", async () => {
       const text = (inputEl.value || "").trim();
-      if (!text) { flash("なにか一言でも大丈夫です。"); return; }
+      if (!text) { flash("一言でも大丈夫ですよ。"); return; }
       lock(true);
-      resultEl.textContent = "…AIが考えています";
+      resultEl.textContent = "考えています…";
       try {
-        const res = await fetch("/reflect", {
+        const res = await fetch("/talk", {
           method: "POST",
           headers: {"Content-Type": "application/json"},
           body: JSON.stringify({ user_input: text })
@@ -82,9 +78,8 @@
         const data = await res.json();
         if (data.error) throw new Error(data.error);
         resultEl.textContent = data.reply;
-
         if (speakToggle.checked) speakText(data.reply);
-        inputEl.value = ""; // Reflect後に自動クリア
+        inputEl.value = "";
       } catch (e) {
         resultEl.textContent = "エラー：" + e.message;
       } finally {
@@ -92,65 +87,31 @@
       }
     });
 
-    // Enter 送信（Ctrl/⌘+Enter）
-    inputEl.addEventListener("keydown",(e)=>{
-      if(e.key==="Enter" && (e.ctrlKey || e.metaKey)){ btn.click(); }
-    });
+    function lock(v){ btn.disabled=v; micBtn.disabled=v; }
+    function flash(msg){ resultEl.textContent=msg; setTimeout(()=>{resultEl.textContent=""},2000); }
 
-    function lock(v){
-      btn.disabled = v; micBtn.disabled = v;
-    }
-    function flash(msg){
-      resultEl.textContent = msg;
-      setTimeout(()=>{ if(resultEl.textContent===msg) resultEl.textContent=""; }, 2000);
-    }
-
-    // 音声入力（Chrome/Edge）
+    // 音声入力
     let recog;
     if ("webkitSpeechRecognition" in window) {
       recog = new webkitSpeechRecognition();
       recog.lang = "ja-JP";
-      recog.interimResults = false;
-      recog.maxAlternatives = 1;
       recog.onresult = (e) => {
-        const t = e.results[0][0].transcript;
-        inputEl.value = (inputEl.value ? inputEl.value + " " : "") + t;
-        flash("音声を文字にしました。");
+        inputEl.value = e.results[0][0].transcript;
+        flash("入力しました。");
       };
-      recog.onerror = () => flash("音声入力に失敗しました。");
+      recog.onerror = () => flash("うまく聞き取れませんでした。");
     } else {
-      micBtn.style.display = "none";
+      micBtn.style.display="none";
     }
-    micBtn.addEventListener("click", () => {
-      if (!recog) return;
-      try { recog.start(); flash("どうぞ、お話しください…"); } catch {}
-    });
+    micBtn.addEventListener("click",()=>{ if(recog) recog.start(); });
 
-    // 読み上げ（自然め・記号/番号除去）
-    function sanitizeForTTS(text){
-      let t = text;
-      t = t.replace(/^\s*[\d０-９]+\s*[\.．]\s*/gm, "");             // 1. 2. を読まない
-      t = t.replace(/^\s*(要約|助言|次の一言)\s*[:：]\s*/gm, "");    // ラベル除外
-      t = t.replace(/[☆★♪♫💡✨✅➡︎→•・◇◆■□●○►]/g, "");         // 記号除外
-      return t.trim();
-    }
-    function pickVoice(langPrefix="ja"){
-      const vs = speechSynthesis.getVoices();
-      const prefer = ["Hattori","Ichiro","Otoya","Taro","Haru","Show","Male"];
-      const cand = vs.filter(v => v.lang && v.lang.startsWith(langPrefix));
-      return cand.find(v => prefer.some(p => (v.name||"").toLowerCase().includes(p.toLowerCase()))) || cand[0] || null;
-    }
-    function speakText(text){
-      try{ speechSynthesis.cancel(); }catch{}
-      const clean = sanitizeForTTS(text);
-      if(!clean) return;
-      const u = new SpeechSynthesisUtterance(clean);
-      const v = pickVoice("ja"); if(v) u.voice = v;
-      u.rate = 0.95; u.pitch = 0.95; u.volume = 1.0;
-      u.text = clean.replace(/。/g, "。 ");
+    // 読み上げ
+    function speakText(t){
+      const u=new SpeechSynthesisUtterance(t);
+      u.lang="ja-JP";
+      u.rate=0.95;u.pitch=1.0;
       speechSynthesis.speak(u);
     }
-    window.speechSynthesis && (window.speechSynthesis.onvoiceschanged ||= ()=>{});
   </script>
 </body>
 </html>
