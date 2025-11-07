@@ -34,6 +34,7 @@
     </div>
 
     <div id="result" class="result"></div>
+    <audio id="reply_audio" controls hidden></audio>
 
     <footer>© おはなし横丁</footer>
   </main>
@@ -43,8 +44,9 @@
     const micBtn = document.getElementById("mic_btn");
     const input = document.getElementById("user_input");
     const result = document.getElementById("result");
+    const audio = document.getElementById("reply_audio");
 
-    // 🎤 音声入力
+    // 音声入力
     micBtn.addEventListener("click", () => {
       const rec = new webkitSpeechRecognition();
       rec.lang = "ja-JP";
@@ -54,32 +56,7 @@
       };
     });
 
-    // 🎧 音声読み上げ
-    function speakText(text, voiceType) {
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.lang = "ja-JP";
-
-      // キャラごとの声質調整
-      switch (voiceType) {
-        case "misa":
-          utter.pitch = 1.4;
-          utter.rate = 1.05;
-          break;
-        case "yuu":
-          utter.pitch = 1.2;
-          utter.rate = 1.2;
-          break;
-        case "souta":
-          utter.pitch = 0.8;
-          utter.rate = 0.95;
-          break;
-      }
-
-      speechSynthesis.cancel();
-      speechSynthesis.speak(utter);
-    }
-
-    // ✉️ AI返答
+    // AI返答＋音声再生
     sendBtn.addEventListener("click", async () => {
       const text = input.value.trim();
       if (!text) return;
@@ -96,7 +73,9 @@
       const data = await res.json();
       if (data.reply) {
         result.textContent = data.reply;
-        speakText(data.reply, voiceType); // ← 自動で声を再生
+        audio.src = data.audio_url + "?t=" + Date.now(); // キャッシュ防止
+        audio.hidden = false;
+        audio.play();
       } else {
         result.textContent = "少し待ってからもう一度試してください。";
       }
