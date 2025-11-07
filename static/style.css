@@ -1,0 +1,149 @@
+:root{
+  /* 昭和レトロ × 優しい未来 */
+  --bg-beige: #f9f3e9;   /* 薄ベージュ */
+  --sky:      #a3d5e5;   /* 水色 */
+  --sakura:   #f9cbd3;   /* 桜色 */
+  --ink:      #42515a;   /* 落ち着いたインク色 */
+  --panel:    #ffffffcc;
+  --shadow:   0 10px 30px rgba(66,81,90,.12);
+  --radius:   16px;
+}
+
+*{ box-sizing:border-box; }
+html,body{
+  height:100%;
+  margin:0;
+  font-family: "Zen Maru Gothic", system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+  color: var(--ink);
+  background: radial-gradient(1200px 800px at 50% 45%, rgba(163,213,229,.35), transparent 60%),
+              radial-gradient(1000px 700px at 50% 55%, rgba(249,203,211,.32), transparent 65%),
+              var(--bg-beige);
+}
+
+/* ゆっくり呼吸する光（背景のごく弱い脈動） */
+.bg-breath{
+  position: fixed; inset: 0; pointer-events: none;
+  background: radial-gradient(550px 380px at 50% 50%, rgba(255,255,255,.35), transparent 70%);
+  animation: breath 7.5s ease-in-out infinite;
+  opacity:.6;
+}
+@keyframes breath{
+  0%,100%{ transform: scale(1);   filter: blur(0.5px); opacity:.55;}
+  50%    { transform: scale(1.06); filter: blur(1.2px); opacity:.75;}
+}
+
+.site-header{
+  max-width: 960px; margin: 24px auto 8px; padding: 0 16px;
+}
+.brand{ display:flex; align-items:center; gap:10px; }
+.brand h1{
+  margin: 0;
+  font-size: clamp(20px, 2.6vw, 28px);
+  letter-spacing: .02em;
+}
+.sketch-icon{ filter: drop-shadow(0 1px 0 rgba(0,0,0,.06)); }
+
+.container{
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 16px 64px;
+}
+
+.hero{
+  text-align: center;
+  margin: 12px 0 22px;
+}
+.hero h2{
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+.tagline{
+  margin: 0;
+  opacity: .9;
+  line-height: 1.8;
+}
+
+.card{
+  background: var(--panel);
+  backdrop-filter: blur(2px);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin: 16px 0;
+  border: 1px dashed rgba(66,81,90,.15); /* 手書き風の雰囲気に */
+}
+
+.label{
+  display:block; font-weight:700; margin-bottom:6px;
+}
+.textarea{
+  width:100%;
+  border: 2px solid rgba(66,81,90,.15);
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: #fff;
+  outline: none;
+  font-size: 16px;
+  line-height: 1.7;
+  transition: box-shadow .2s ease, border-color .2s ease;
+}
+.textarea:focus{
+  border-color: var(--sky);
+  box-shadow: 0 0 0 4px rgba(163,213,229,.25);
+}
+
+.actions{
+  display:flex; gap:12px; flex-wrap:wrap;
+  margin-top: 14px;
+}
+
+.btn{
+  appearance:none;
+  border:none;
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-weight:700;
+  font-size: 15px;
+  cursor:pointer;
+  transition: transform .06s ease, box-shadow .2s ease, background .2s ease;
+}
+.btn:active{ transform: translateY(1px); }
+
+.btn-primary{
+  background: linear-gradient(180deg, var(--sky), #7cc6dd);
+  color:#12333e;
+  box-shadow: 0 6px 18px rgba(163,213,229,.45);
+}
+.btn-primary:hover{
+  box-shadow: 0 10px 24px rgba(163,213,229,.6);
+}
+
+.btn-outline{
+  background: #fff;
+  color:#5a6a72;
+  border:2px solid rgba(66,81,90,.18);
+}
+.btn-outline:hover{
+  background: #fff6f8;
+  border-color: var(--sakura);
+  box-shadow: 0 6px 18px rgba(249,203,211,.35);
+}
+
+.result{
+  margin-top:16px;
+  padding:14px 14px 6px;
+  background: #fff;
+  border-radius: 12px;
+  border:1px solid rgba(66,81,90,.12);
+  min-height: 52px;
+}
+.result p{ margin:0 0 8px; }
+
+.howto h3{ margin: 0 0 8px; }
+.howto ol{ margin: 0; padding-left: 1.2rem; }
+.howto li{ margin: .25rem 0; }
+
+.site-footer{
+  max-width: 960px; margin: 18px auto 36px; padding: 0 16px;
+  text-align: center; opacity: .7;
+}
