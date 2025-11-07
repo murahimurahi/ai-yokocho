@@ -1,125 +1,181 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AI横丁 – 話し相手AI</title>
-
-  <!-- 手書き風・丸めの和文フォント -->
-  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
-
+  <title>AI横丁 — 話し相手AI</title>
   <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
-  <div class="bg-breath"></div>
+  <div class="bg">
+    <div class="radial"></div>
+  </div>
 
-  <header class="site-header">
-    <div class="brand">
-      <!-- 手書き風アイコン（簡易：筆メモの線描きSVG） -->
-      <svg class="sketch-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#5d6d7e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M3 19l6-1 11-11a2 2 0 0 0-3-3L6 15l-1 6z"></path>
-        <path d="M14 6l4 4"></path>
-      </svg>
-      <h1>AI横丁 – 話し相手AI</h1>
-    </div>
-  </header>
+  <main class="card">
 
-  <main class="container">
-    <section class="hero">
-      <h2>昭和レトロ × 優しい未来</h2>
-      <p class="tagline">
-        モヤっとしたままで心がぐちゃぐちゃだと前に進めない。<br>
-        AIに心の中を整理してもらい、スッキリしましょう。これは「心を映すAI日記アプリ」です。
+    <header class="hero">
+      <h1>AI横丁</h1>
+      <p class="tag">昭和レトロ × 優しい未来</p>
+      <p class="lead">
+        おかえりなさい。今日もおつかれさまでした。<br />
+        ここは、ゆっくり話を聴く小さな横丁です。
       </p>
+    </header>
+
+    <section class="use">
+      <details open>
+        <summary>使い方（かんたん3ステップ）</summary>
+        <ol>
+          <li>白い箱に いまの気持ち を一言でもOK、書きます。</li>
+          <li><strong>Reflect</strong> を押すと、AIがやさしく返事します。</li>
+          <li>読み上げにチェックで、声でも聴けます。音声入力もOK。</li>
+        </ol>
+      </details>
     </section>
 
-    <section class="card">
-      <label for="userInput" class="label">つぶやき（今日の気持ち・出来事）</label>
-      <textarea id="userInput" class="textarea" rows="5" placeholder="例）今日はうまくいった！でも帰りに少しイラっと…　本当はどう感じてた？"></textarea>
+    <section class="io">
+      <textarea id="userInput" rows="4" placeholder="例）今日は病院でがんばった。少し疲れたな…"></textarea>
 
-      <div class="actions">
-        <button id="reflectBtn" class="btn btn-primary">Reflect（AIに整える）</button>
-        <button id="clearBtn" class="btn btn-outline">入力をクリア</button>
+      <div class="row">
+        <button id="reflectBtn" class="btn primary">Reflect</button>
+
+        <label class="chk">
+          <input type="checkbox" id="speakToggle" />
+          読み上げ
+        </label>
+
+        <button id="micBtn" class="btn mic" title="音声入力（Chrome推奨）">🎤 音声入力</button>
       </div>
 
       <div id="result" class="result" aria-live="polite"></div>
     </section>
 
-    <section class="card howto">
-      <h3>使い方</h3>
-      <ol>
-        <li>テキスト欄に今日の気持ちをそのまま書く。</li>
-        <li><strong>Reflect</strong> を押すと、AIがやさしく整理（要約＋視点＋一言アドバイス）。</li>
-        <li>気づきは日記として保存（スクショやコピペでOK）。</li>
-      </ol>
-    </section>
+    <footer class="foot">
+      <small>© AI横丁 — ゆっくり、やさしく、お話しましょう。</small>
+    </footer>
   </main>
 
-  <footer class="site-footer">
-    <small>© AI横丁</small>
-  </footer>
-
   <script>
-    const reflectBtn = document.getElementById('reflectBtn');
-    const clearBtn   = document.getElementById('clearBtn');
-    const inputEl    = document.getElementById('userInput');
-    const resultEl   = document.getElementById('result');
+    // -------------- UI --------------
+    const inputEl = document.getElementById("userInput");
+    const resultEl = document.getElementById("result");
+    const btn = document.getElementById("reflectBtn");
+    const speakToggle = document.getElementById("speakToggle");
+    const micBtn = document.getElementById("micBtn");
 
-    // 例文はフォーカス時に消える（ユーザー希望）
-    inputEl.addEventListener('focus', () => {
-      if (inputEl.dataset.touched !== '1' && !inputEl.value) {
-        inputEl.placeholder = '';
-      }
-    });
-    inputEl.addEventListener('input', () => inputEl.dataset.touched = '1');
-
-    clearBtn.addEventListener('click', () => {
-      inputEl.value = '';
-      inputEl.dataset.touched = '0';
-      inputEl.placeholder = '例）今日はうまくいった！でも帰りに少しイラっと…　本当はどう感じてた？';
-      resultEl.textContent = '';
-      inputEl.focus();
+    inputEl.addEventListener("focus", () => {
+      // プレースホルダはフォーカスで自然に消える仕様（値は消さない）
     });
 
-    reflectBtn.addEventListener('click', async () => {
-      const text = inputEl.value.trim();
+    // -------------- Reflect --------------
+    btn.addEventListener("click", async () => {
+      const text = (inputEl.value || "").trim();
       if (!text) {
-        resultEl.textContent = 'まずは思っていることを自由につぶやいてみてください。';
-        inputEl.focus();
+        flash("なにか一言でも大丈夫です。");
         return;
       }
-
-      reflectBtn.disabled = true;
-      reflectBtn.textContent = '整え中…';
-      resultEl.textContent = 'AIがやさしく整理しています…';
-
+      lock(true);
+      resultEl.textContent = "…AIが考えています";
       try {
-        const res = await fetch('/reflect', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const res = await fetch("/reflect", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
           body: JSON.stringify({ user_input: text })
         });
         const data = await res.json();
-
         if (data.error) throw new Error(data.error);
-        resultEl.innerHTML = formatAsBlocks(data.reply || '');
+        resultEl.textContent = data.reply;
+
+        // 読み上げ
+        if (speakToggle.checked) speakText(data.reply);
+
+        // 入力欄は反映後に自動クリア
+        inputEl.value = "";
       } catch (e) {
-        resultEl.textContent = 'ごめんね、うまく応答できなかった。少し待ってからもう一度ためしてみて。';
+        resultEl.textContent = "エラー：" + e.message;
       } finally {
-        reflectBtn.disabled = false;
-        reflectBtn.textContent = 'Reflect（AIに整える）';
+        lock(false);
       }
     });
 
-    // 「— 要約 —」「— 視点 —」「— 一言 —」のような区切りをブロック化して見やすく
-    function formatAsBlocks(text) {
-      // シンプル整形：行ごとに<p>化。記号はそのまま視覚用（読み上げは別実装で抑制可）
-      return text
-        .split(/\n+/)
-        .map(line => line.replace(/^(要約|視点|一言)[:：]\s*/,'<strong>$1：</strong> '))
-        .map(line => `<p>${line}</p>`)
-        .join('');
+    function lock(v){
+      btn.disabled = v;
+      micBtn.disabled = v;
     }
+    function flash(msg){
+      resultEl.textContent = msg;
+      setTimeout(()=>{ if(resultEl.textContent===msg) resultEl.textContent=""; }, 2000);
+    }
+
+    // -------------- 音声入力（Web Speech API） --------------
+    let recog;
+    if ("webkitSpeechRecognition" in window) {
+      recog = new webkitSpeechRecognition();
+      recog.lang = "ja-JP";
+      recog.interimResults = false;
+      recog.maxAlternatives = 1;
+      recog.onresult = (e) => {
+        const t = e.results[0][0].transcript;
+        inputEl.value = (inputEl.value ? inputEl.value + " " : "") + t;
+        flash("音声を文字にしました。");
+      };
+      recog.onerror = () => flash("音声入力に失敗しました。");
+    } else {
+      micBtn.style.display = "none";
+    }
+
+    micBtn.addEventListener("click", () => {
+      if (!recog) return;
+      try { recog.start(); flash("どうぞ、お話しください…"); } catch {}
+    });
+
+    // -------------- 読み上げ（自然め・記号/番号除去） --------------
+    function sanitizeForTTS(text){
+      let t = text;
+      // 先頭の番号「1. 」「２．」などを除去
+      t = t.replace(/^\s*[\d０-９]+\s*[\.．]\s*/gm, "");
+      // ラベルっぽい語（不要なら追加）
+      t = t.replace(/^\s*(要約|助言|次の一言)\s*[:：]\s*/gm, "");
+      // 絵文字や装飾の簡易除去（最小限）
+      t = t.replace(/[☆★♪♫💡✨✅➡︎→•・◇◆■□●○►]/g, "");
+      return t.trim();
+    }
+
+    function speakText(text){
+      try{ window.speechSynthesis.cancel(); }catch{}
+      const t = sanitizeForTTS(text);
+      if (!t) return;
+
+      const u = new SpeechSynthesisUtterance(t);
+
+      // “若め男性・落ち着き”寄りの調整（端末依存）
+      const v = pickVoice("ja");
+      if (v) u.voice = v;
+
+      u.rate = 0.95;   // ゆっくりすぎず
+      u.pitch = 0.95;  // 低めで聞きやすく
+      u.volume = 1.0;
+
+      // 句読点で小休止
+      u.text = t.replace(/。/g, "。 ");
+      speechSynthesis.speak(u);
+    }
+
+    function pickVoice(langPrefix="ja"){
+      const voices = speechSynthesis.getVoices();
+      // “男性っぽい/若め”の名称を優先（環境差が大きいので緩め）
+      const prefer = ["Hattori", "Ichiro", "Otoya", "Taro", "Haru", "Show"];
+      let cand = voices.filter(v => v.lang && v.lang.startsWith(langPrefix));
+      let best = cand.find(v => prefer.some(p => (v.name||"").toLowerCase().includes(p.toLowerCase())));
+      return best || cand[0] || null;
+    }
+    // 一部ブラウザで getVoices 初回が空のことがある対策
+    window.speechSynthesis && window.speechSynthesis.onvoiceschanged;
+
+    // Enterで送信
+    inputEl.addEventListener("keydown",(e)=>{
+      if(e.key==="Enter" && (e.ctrlKey || e.metaKey)){ btn.click(); }
+    });
   </script>
 </body>
 </html>
