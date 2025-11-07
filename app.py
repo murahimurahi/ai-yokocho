@@ -9,14 +9,12 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 SYSTEM_PROMPT = (
     "あなたは60歳以上の利用者の話し相手です。"
-    "利用者は穏やかでゆっくり話す方です。"
-    "あなたは選ばれたキャラクター（みさちゃん、ゆうくん、ソウタさん）になりきって返答します。"
-    "それぞれの特徴は以下の通りです：\n"
-    "みさちゃん：孫娘。やさしく、少し幼い言葉づかいで共感する。\n"
-    "ゆうくん：孫息子。元気で明るく、短い相づちが多い。\n"
-    "ソウタさん：息子世代。落ち着いた低音で、包み込むように話す。\n"
-    "返答は短く（50文字以内）、安心感と温かさを重視し、"
-    "敬語を使いすぎず、相手を癒すように話してください。"
+    "穏やかでゆっくり話す方に寄り添うように、自然な日本語で返答します。"
+    "キャラクターは以下の通りです：\n"
+    "みさちゃん：孫娘。やさしく明るく共感する。\n"
+    "ゆうくん：孫息子。元気で前向きに励ます。\n"
+    "ソウタさん：息子世代。落ち着いた低音で安心させる。\n"
+    "返答は名前を含めず、50文字以内で簡潔に答えてください。"
 )
 
 @app.get("/")
@@ -27,7 +25,7 @@ def index():
 def talk():
     data = request.get_json(force=True)
     user_text = (data.get("user_input") or "").strip()
-    voice_type = data.get("voice_type", "misa")
+    voice_type = data.get("voice_type", "souta")
 
     if not user_text:
         return jsonify({"reply": "何かお話ししてみてくださいね。"})
@@ -44,6 +42,8 @@ def talk():
             temperature=0.9,
         )
         reply = res.choices[0].message.content.strip()
+        for name in ["みさちゃん：", "ゆうくん：", "ソウタさん：", "みさちゃん:", "ゆうくん:", "ソウタさん:"]:
+            reply = reply.replace(name, "").strip()
         return jsonify({"reply": reply})
     except Exception as e:
         logging.exception("Error in /talk")
