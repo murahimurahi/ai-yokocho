@@ -1,87 +1,125 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI横丁 - 話し相手AI</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      color: #fff;
-      background: radial-gradient(circle at center, #0a1e3f, #000);
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      height: 100vh; text-align: center;
-      transition: background 10s ease-in-out;
-      animation: breathe 12s infinite alternate;
-    }
-    @keyframes breathe {
-      0% { background: radial-gradient(circle at center, #0a1e3f, #000); }
-      100% { background: radial-gradient(circle at center, #183c7c, #000); }
-    }
-    textarea {
-      width: 80%; max-width: 500px; height: 120px;
-      border-radius: 10px; border: none; padding: 10px;
-      font-size: 16px; resize: none; outline: none;
-    }
-    button {
-      margin-top: 15px; padding: 12px 30px;
-      border: none; border-radius: 50px;
-      background: linear-gradient(90deg, #00aaff, #0066ff);
-      color: white; font-weight: bold; cursor: pointer;
-      position: relative; overflow: hidden;
-    }
-    button::after {
-      content: ""; position: absolute;
-      width: 0; height: 0; background: rgba(255,255,255,0.5);
-      border-radius: 50%; transform: scale(0);
-      transition: transform 0.4s, opacity 0.6s;
-      opacity: 0;
-    }
-    button:active::after {
-      width: 100px; height: 100px; top: 50%; left: 50%;
-      transform: translate(-50%, -50%) scale(1);
-      opacity: 1;
-    }
-    #result {
-      margin-top: 20px; width: 80%; max-width: 500px;
-      font-size: 18px; line-height: 1.6;
-    }
-  </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AI横丁 – 話し相手AI</title>
+
+  <!-- 手書き風・丸めの和文フォント -->
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
-  <h1>💬 AI横丁 - 話し相手AI</h1>
-  <p>モヤっとしたこと、愚痴、悩みをつぶやいてください。</p>
-  <textarea id="input" placeholder="今日はちょっと疲れたな…"></textarea>
-  <br>
-  <button id="reflectBtn">Reflect（AIに話す）</button>
-  <div id="result"></div>
+  <div class="bg-breath"></div>
+
+  <header class="site-header">
+    <div class="brand">
+      <!-- 手書き風アイコン（簡易：筆メモの線描きSVG） -->
+      <svg class="sketch-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#5d6d7e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 19l6-1 11-11a2 2 0 0 0-3-3L6 15l-1 6z"></path>
+        <path d="M14 6l4 4"></path>
+      </svg>
+      <h1>AI横丁 – 話し相手AI</h1>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <h2>昭和レトロ × 優しい未来</h2>
+      <p class="tagline">
+        モヤっとしたままで心がぐちゃぐちゃだと前に進めない。<br>
+        AIに心の中を整理してもらい、スッキリしましょう。これは「心を映すAI日記アプリ」です。
+      </p>
+    </section>
+
+    <section class="card">
+      <label for="userInput" class="label">つぶやき（今日の気持ち・出来事）</label>
+      <textarea id="userInput" class="textarea" rows="5" placeholder="例）今日はうまくいった！でも帰りに少しイラっと…　本当はどう感じてた？"></textarea>
+
+      <div class="actions">
+        <button id="reflectBtn" class="btn btn-primary">Reflect（AIに整える）</button>
+        <button id="clearBtn" class="btn btn-outline">入力をクリア</button>
+      </div>
+
+      <div id="result" class="result" aria-live="polite"></div>
+    </section>
+
+    <section class="card howto">
+      <h3>使い方</h3>
+      <ol>
+        <li>テキスト欄に今日の気持ちをそのまま書く。</li>
+        <li><strong>Reflect</strong> を押すと、AIがやさしく整理（要約＋視点＋一言アドバイス）。</li>
+        <li>気づきは日記として保存（スクショやコピペでOK）。</li>
+      </ol>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <small>© AI横丁</small>
+  </footer>
 
   <script>
-    const btn = document.getElementById("reflectBtn");
-    const input = document.getElementById("input");
-    const result = document.getElementById("result");
+    const reflectBtn = document.getElementById('reflectBtn');
+    const clearBtn   = document.getElementById('clearBtn');
+    const inputEl    = document.getElementById('userInput');
+    const resultEl   = document.getElementById('result');
 
-    btn.addEventListener("click", async () => {
-      const text = input.value.trim();
-      if (!text) return;
-      result.textContent = "AIが考え中です...";
-      btn.disabled = true;
-      try {
-        const res = await fetch("/reflect", {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({ text })
-        });
-        const data = await res.json();
-        if (data.reply) result.textContent = data.reply;
-        else result.textContent = "エラー：" + data.error;
-      } catch (e) {
-        result.textContent = "通信エラー：" + e.message;
-      } finally {
-        btn.disabled = false;
+    // 例文はフォーカス時に消える（ユーザー希望）
+    inputEl.addEventListener('focus', () => {
+      if (inputEl.dataset.touched !== '1' && !inputEl.value) {
+        inputEl.placeholder = '';
       }
     });
+    inputEl.addEventListener('input', () => inputEl.dataset.touched = '1');
+
+    clearBtn.addEventListener('click', () => {
+      inputEl.value = '';
+      inputEl.dataset.touched = '0';
+      inputEl.placeholder = '例）今日はうまくいった！でも帰りに少しイラっと…　本当はどう感じてた？';
+      resultEl.textContent = '';
+      inputEl.focus();
+    });
+
+    reflectBtn.addEventListener('click', async () => {
+      const text = inputEl.value.trim();
+      if (!text) {
+        resultEl.textContent = 'まずは思っていることを自由につぶやいてみてください。';
+        inputEl.focus();
+        return;
+      }
+
+      reflectBtn.disabled = true;
+      reflectBtn.textContent = '整え中…';
+      resultEl.textContent = 'AIがやさしく整理しています…';
+
+      try {
+        const res = await fetch('/reflect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_input: text })
+        });
+        const data = await res.json();
+
+        if (data.error) throw new Error(data.error);
+        resultEl.innerHTML = formatAsBlocks(data.reply || '');
+      } catch (e) {
+        resultEl.textContent = 'ごめんね、うまく応答できなかった。少し待ってからもう一度ためしてみて。';
+      } finally {
+        reflectBtn.disabled = false;
+        reflectBtn.textContent = 'Reflect（AIに整える）';
+      }
+    });
+
+    // 「— 要約 —」「— 視点 —」「— 一言 —」のような区切りをブロック化して見やすく
+    function formatAsBlocks(text) {
+      // シンプル整形：行ごとに<p>化。記号はそのまま視覚用（読み上げは別実装で抑制可）
+      return text
+        .split(/\n+/)
+        .map(line => line.replace(/^(要約|視点|一言)[:：]\s*/,'<strong>$1：</strong> '))
+        .map(line => `<p>${line}</p>`)
+        .join('');
+    }
   </script>
 </body>
 </html>
