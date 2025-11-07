@@ -5,7 +5,6 @@ from openai import OpenAI
 app = Flask(__name__, template_folder="templates", static_folder="static")
 logging.basicConfig(level=logging.INFO)
 
-# --- OpenAI v1 クライアント ---
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 client = OpenAI(api_key=OPENAI_API_KEY)
 
@@ -31,7 +30,7 @@ def build_messages(user_text: str):
         },
     ]
 
-@app.route("/", methods=["GET"])
+@app.get("/")
 def index():
     return render_template("index.html")
 
@@ -40,7 +39,6 @@ def reflect():
     try:
         data = request.get_json(force=True)
         user_text = (data.get("user_input") or "").strip()
-
         if not user_text:
             return jsonify({"error": "empty"}), 400
 
